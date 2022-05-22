@@ -54,7 +54,16 @@ def createInitializedGreyscalePixelArray(image_width, image_height, initValue = 
     new_array = [[initValue for x in range(image_width)] for y in range(image_height)]
     return new_array
 
+# This function converts a rgb image to a greyscale image
+def convertToGreyscale(image_width, image_height, px_array_r, px_array_g, px_array_b):
 
+    greyscale_image = createInitializedGreyscalePixelArray(image_width, image_height)
+
+    for i in range(image_height):
+        for j in range(image_width):
+            greyscale_image[i][j] = 0.299*px_array_r[i][j] + 0.587*px_array_g[i][j] + 0.114*px_array_b[i][j]
+    
+    return greyscale_image
 
 # This is our code skeleton that performs the license plate detection.
 # Feel free to try it on your own images of cars, but keep in mind that with our algorithm developed in this lecture,
@@ -98,7 +107,10 @@ def main():
 
     # STUDENT IMPLEMENTATION here
 
-    px_array = px_array_r
+
+    px_array = convertToGreyscale(image_width, image_height, px_array_r, px_array_g, px_array_b)
+
+    # px_array = px_array_r
 
     # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
     center_x = image_width / 2.0
