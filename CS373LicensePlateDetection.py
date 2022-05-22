@@ -1,12 +1,12 @@
 import math
 import sys
 from pathlib import Path
-
 from matplotlib import pyplot
 from matplotlib.patches import Rectangle
 
 # import our basic, light-weight png reader library
 import imageIO.png
+
 
 # this function reads an RGB color png file and returns width, height, as well as pixel arrays for r,g,b
 def readRGBImageToSeparatePixelArrays(input_filename):
@@ -54,6 +54,74 @@ def createInitializedGreyscalePixelArray(image_width, image_height, initValue = 
     new_array = [[initValue for x in range(image_width)] for y in range(image_height)]
     return new_array
 
+
+# Helper function to compute the min and max values of a image
+def computeMinAndMaxValues(pixel_array, image_width, image_height):
+    
+    # Default min and max values. At the boundary.
+    max_value = 0
+    min_value = 255
+    
+    # Iterate over every pixel in the image
+    for i in range(image_height):
+        for j in range(image_width):
+            
+            value = pixel_array[i][j]
+            
+            # Update max
+            if value > max_value:
+                max_value = value
+            
+            # Update min
+            if value < min_value:
+                min_value = value
+                
+    return (min_value, max_value)
+
+            
+# This function scales the intensities of an image
+def scaleTo0And255AndQuantize(pixel_array, image_width, image_height):
+    
+    # Create identical dimension blank image to be used as a updated version of 
+    # the parameter image after transformation.
+    image = createInitializedGreyscalePixelArray(image_width, image_height)
+    
+    # Find min and max values of the image with the use of a helper function below
+    f_min, f_max = computeMinAndMaxValues(pixel_array, image_width, image_height)
+
+    # Default bounds
+    g_min, g_max = 0, 255
+    
+    # In the case min and max of the image are the same return blank image
+    if f_min == f_max:
+        return image
+    
+    # Iterate over every pixel
+    for i in range(image_height):
+        for j in range(image_width):
+            
+            # Compute gain and bias coefficients
+            a = (g_max - g_min)/(f_max - f_min)
+            b = g_min - f_min*a
+            
+            # Generate transformed value
+            new_value = round(a*pixel_array[i][j] + b)
+            
+            # Clamp to keep new_value between the bounds
+            # Keep new_value <= g_max (255)
+            if new_value > g_max:
+                new_value = g_max
+            
+            # Keep new_value >= g_min (0)
+            if new_value < g_min:
+                new_value = g_min
+            
+            # Update pixel in image
+            image[i][j] = new_value
+    
+    return image
+
+
 # This function converts a rgb image to a greyscale image
 def convertToGreyscale(image_width, image_height, px_array_r, px_array_g, px_array_b):
 
@@ -64,6 +132,7 @@ def convertToGreyscale(image_width, image_height, px_array_r, px_array_g, px_arr
             greyscale_image[i][j] = 0.299*px_array_r[i][j] + 0.587*px_array_g[i][j] + 0.114*px_array_b[i][j]
     
     return greyscale_image
+
 
 # This is our code skeleton that performs the license plate detection.
 # Feel free to try it on your own images of cars, but keep in mind that with our algorithm developed in this lecture,
@@ -106,11 +175,12 @@ def main():
 
 
     # STUDENT IMPLEMENTATION here
-
-
+    # Convert RGB image to Greyscale
     px_array = convertToGreyscale(image_width, image_height, px_array_r, px_array_g, px_array_b)
 
-    # px_array = px_array_r
+    # Scale and Quantize the image
+    px_array = scaleTo0And255AndQuantize(px_array, image_width, image_height)
+
 
     # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
     center_x = image_width / 2.0
@@ -120,18 +190,12 @@ def main():
     bbox_min_y = center_y - image_height / 4.0
     bbox_max_y = center_y + image_height / 4.0
 
-
-
-
-
     # Draw a bounding box as a rectangle into the input image
     axs1[1, 1].set_title('Final image of detection')
     axs1[1, 1].imshow(px_array, cmap='gray')
     rect = Rectangle((bbox_min_x, bbox_min_y), bbox_max_x - bbox_min_x, bbox_max_y - bbox_min_y, linewidth=1,
                      edgecolor='g', facecolor='none')
     axs1[1, 1].add_patch(rect)
-
-
 
     # write the output image into output_filename, using the matplotlib savefig method
     extent = axs1[1, 1].get_window_extent().transformed(fig1.dpi_scale_trans.inverted())
