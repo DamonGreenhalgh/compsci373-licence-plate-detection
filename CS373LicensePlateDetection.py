@@ -151,6 +151,20 @@ def convertToGreyscale(image_width, image_height, px_array_r, px_array_g, px_arr
     
     return greyscale_image
 
+def computeThresholdSegmentation(pixel_array, image_width, image_height, threshold):
+
+    image = createInitializedGreyscalePixelArray(image_width, image_height)
+
+    for i in range(image_height):
+        for j in range(image_width):
+
+            if pixel_array[i][j] < threshold:
+                image[i][j] = 0
+            else:
+                image[i][j] = 1
+
+    return image
+
 
 # This is our code skeleton that performs the license plate detection.
 # Feel free to try it on your own images of cars, but keep in mind that with our algorithm developed in this lecture,
@@ -200,8 +214,10 @@ def main():
     px_array = scaleTo0And255AndQuantize(px_array, image_width, image_height)
 
     # Compute Standard Deviation
-    px_array = computeStandardDeviationImage3x3(px_array, image_width, image_height)
+    sd_array = computeStandardDeviationImage3x3(px_array, image_width, image_height)
 
+    # Compute Binary Threshold Segmentation
+    seg_array = computeThresholdSegmentation(px_array, image_width, image_height, 150)
 
     # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
     center_x = image_width / 2.0
@@ -213,7 +229,7 @@ def main():
 
     # Draw a bounding box as a rectangle into the input image
     axs1[1, 1].set_title('Final image of detection')
-    axs1[1, 1].imshow(px_array, cmap='gray')
+    axs1[1, 1].imshow(seg_array, cmap='gray')
     rect = Rectangle((bbox_min_x, bbox_min_y), bbox_max_x - bbox_min_x, bbox_max_y - bbox_min_y, linewidth=1,
                      edgecolor='g', facecolor='none')
     axs1[1, 1].add_patch(rect)
