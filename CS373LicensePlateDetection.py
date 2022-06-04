@@ -166,6 +166,70 @@ def computeThresholdSegmentation(pixel_array, image_width, image_height, thresho
     return image
 
 
+def computeErosion8Nbh3x3FlatSE(pixel_array, image_width, image_height):
+
+    image = createInitializedGreyscalePixelArray(image_width, image_height)
+
+    se = [
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1]
+    ]
+
+    for i in range(1, image_height - 1):
+        for j in range(1, image_width - 1):
+
+            fit = True
+
+            for k in [-1, 0, 1]:
+                for l in [-1, 0, 1]:
+
+                    value = pixel_array[i + k][j + l]
+
+                    if value == 0 and value != se[k + 1][l + 1]:
+                        fit = False
+
+            if fit:
+                image[i][j] = 1
+
+    return image
+
+
+def computeDilation8Nbh3x3FlatSE(pixel_array, image_width, image_height):
+    image = createInitializedGreyscalePixelArray(image_width, image_height)
+
+    se = [
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1]
+    ]
+
+    for i in range(image_height):
+        for j in range(image_width):
+
+            hit = False
+
+            for k in [-1, 0, 1]:
+                for l in [-1, 0, 1]:
+
+                    y = i + k
+                    x = j + l
+
+                    if -1 < y < image_height and -1 < x < image_width:
+
+                        active = False
+                        if pixel_array[y][x] == 1 or pixel_array[y][x]:
+                            active = True
+
+                        if active and 1 == se[k + 1][l + 1]:
+                            hit = True
+
+            if hit:
+                image[i][j] = 1
+
+    return image
+
+
 # This is our code skeleton that performs the license plate detection.
 # Feel free to try it on your own images of cars, but keep in mind that with our algorithm developed in this lecture,
 # we won't detect arbitrary or difficult to detect license plates!
@@ -218,6 +282,14 @@ def main():
 
     # Compute Binary Threshold Segmentation
     seg_array = computeThresholdSegmentation(px_array, image_width, image_height, 150)
+
+    # Dilation operations
+    for i in range(3):
+        seg_array = computeDilation8Nbh3x3FlatSE(seg_array, image_width, image_height)
+
+    # Erosion operations
+    for i in range(3):
+        seg_array = computeErosion8Nbh3x3FlatSE(seg_array, image_width, image_height)
 
     # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
     center_x = image_width / 2.0
