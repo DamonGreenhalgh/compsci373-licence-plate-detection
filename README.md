@@ -16,7 +16,7 @@ Aim is to detect bounding box around the license plate in an image of a car.
 ## Algorithm
 
 - [x] Read the input image, convert RGB data to greyscale, and strech the values to lie between 0 and 255 (Greyscale conversion and Contrast Stretching).
-- [ ] Find structs with high contrast in the image by computing the standard deviation in the pixel neighborhood (Filtering).
+- [x] Find structs with high contrast in the image by computing the standard deviation in the pixel neighborhood (Filtering).
 - [ ] Perform a thresholding operation to get the high contrast regions as a binary image (Thresholding for Segmentation). Hint: a good threshold value is around 150.
 - [ ] Perform several 3x3 dilation steps followed by several 3x3 erosion steps to get a blob region for the license plate (Morphological operations).
 - [ ] Perform a connected component analysis to find the largest connected object (Connected Component analysis).

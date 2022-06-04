@@ -54,6 +54,24 @@ def createInitializedGreyscalePixelArray(image_width, image_height, initValue = 
     new_array = [[initValue for x in range(image_width)] for y in range(image_height)]
     return new_array
 
+# This function computes the standard deviation of the input image in a 3x3 window.
+def computeStandardDeviationImage3x3(pixel_array, image_width, image_height):
+    image = createInitializedGreyscalePixelArray(image_width, image_height, 0.0)
+
+    for i in range(1, image_height - 1):
+        for j in range(1, image_width - 1):
+
+            values = []
+
+            for k in [-1, 0, 1]:
+                for l in [-1, 0, 1]:
+                    values.append(pixel_array[i + k][j + l])
+
+            mean = sum(values) / 9
+            image[i][j] = pow(sum([pow(value - mean, 2) for value in values]) / 9, 0.5)
+
+    return image
+
 
 # Helper function to compute the min and max values of a image
 def computeMinAndMaxValues(pixel_array, image_width, image_height):
@@ -180,6 +198,9 @@ def main():
 
     # Scale and Quantize the image
     px_array = scaleTo0And255AndQuantize(px_array, image_width, image_height)
+
+    # Compute Standard Deviation
+    px_array = computeStandardDeviationImage3x3(px_array, image_width, image_height)
 
 
     # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
