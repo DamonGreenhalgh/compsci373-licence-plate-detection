@@ -19,8 +19,8 @@ Aim is to detect bounding box around the license plate in an image of a car.
 - [x] Find structs with high contrast in the image by computing the standard deviation in the pixel neighborhood (Filtering).
 - [x] Perform a thresholding operation to get the high contrast regions as a binary image (Thresholding for Segmentation). Hint: a good threshold value is around 150.
 - [x] Perform several 3x3 dilation steps followed by several 3x3 erosion steps to get a blob region for the license plate (Morphological operations).
-- [ ] Perform a connected component analysis to find the largest connected object (Connected Component analysis).
-- [ ] Extract the final bounding box around this region, by looping over the image and looking for the minimum and maximum x and y coordinates of the pixels of the previously determined connected component.
+- [x] Perform a connected component analysis to find the largest connected object (Connected Component analysis).
+- [x] Extract the final bounding box around this region, by looping over the image and looking for the minimum and maximum x and y coordinates of the pixels of the previously determined connected component.
 
 ## Extension (5 Points)
 

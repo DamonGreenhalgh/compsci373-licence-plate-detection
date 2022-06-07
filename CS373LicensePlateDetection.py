@@ -8,6 +8,24 @@ from matplotlib.patches import Rectangle
 import imageIO.png
 
 
+# Queue data structure used for connected component analysis
+class Queue:
+    def __init__(self):
+        self.items = []
+
+    def isEmpty(self):
+        return self.items == []
+
+    def enqueue(self, item):
+        self.items.insert(0,item)
+
+    def dequeue(self):
+        return self.items.pop()
+
+    def size(self):
+        return len(self.items)
+
+
 # this function reads an RGB color png file and returns width, height, as well as pixel arrays for r,g,b
 def readRGBImageToSeparatePixelArrays(input_filename):
 
@@ -54,21 +72,24 @@ def createInitializedGreyscalePixelArray(image_width, image_height, initValue = 
     new_array = [[initValue for x in range(image_width)] for y in range(image_height)]
     return new_array
 
-# This function computes the standard deviation of the input image in a 3x3 window.
-def computeStandardDeviationImage3x3(pixel_array, image_width, image_height):
+# This function computes the standard deviation of the input image.
+def standardDeviation(pixel_array, image_width, image_height):
     image = createInitializedGreyscalePixelArray(image_width, image_height, 0.0)
-
-    for i in range(1, image_height - 1):
-        for j in range(1, image_width - 1):
+    region_size = 2
+    region = [(i - region_size) for i in range(region_size * 2 + 1)]
+    norm = pow(region_size * 2 + 1, 2)
+    print(region, norm)
+    for i in range(region_size, image_height - region_size):
+        for j in range(region_size, image_width - region_size):
 
             values = []
 
-            for k in [-1, 0, 1]:
-                for l in [-1, 0, 1]:
+            for k in region:
+                for l in region:
                     values.append(pixel_array[i + k][j + l])
 
-            mean = sum(values) / 9
-            image[i][j] = pow(sum([pow(value - mean, 2) for value in values]) / 9, 0.5)
+            mean = sum(values) / norm
+            image[i][j] = pow(sum([pow(value - mean, 2) for value in values]) / norm, 0.5)
 
     return image
 
@@ -98,7 +119,7 @@ def computeMinAndMaxValues(pixel_array, image_width, image_height):
 
             
 # This function scales the intensities of an image
-def scaleTo0And255AndQuantize(pixel_array, image_width, image_height):
+def scale(pixel_array, image_width, image_height):
     
     # Create identical dimension blank image to be used as a updated version of 
     # the parameter image after transformation.
@@ -151,7 +172,7 @@ def convertToGreyscale(image_width, image_height, px_array_r, px_array_g, px_arr
     
     return greyscale_image
 
-def computeThresholdSegmentation(pixel_array, image_width, image_height, threshold):
+def thresholdSegmentation(pixel_array, image_width, image_height, threshold):
 
     image = createInitializedGreyscalePixelArray(image_width, image_height)
 
@@ -166,36 +187,7 @@ def computeThresholdSegmentation(pixel_array, image_width, image_height, thresho
     return image
 
 
-def computeErosion8Nbh3x3FlatSE(pixel_array, image_width, image_height):
-
-    image = createInitializedGreyscalePixelArray(image_width, image_height)
-
-    se = [
-        [1, 1, 1],
-        [1, 1, 1],
-        [1, 1, 1]
-    ]
-
-    for i in range(1, image_height - 1):
-        for j in range(1, image_width - 1):
-
-            fit = True
-
-            for k in [-1, 0, 1]:
-                for l in [-1, 0, 1]:
-
-                    value = pixel_array[i + k][j + l]
-
-                    if value == 0 and value != se[k + 1][l + 1]:
-                        fit = False
-
-            if fit:
-                image[i][j] = 1
-
-    return image
-
-
-def computeDilation8Nbh3x3FlatSE(pixel_array, image_width, image_height):
+def dilation(pixel_array, image_width, image_height):
     image = createInitializedGreyscalePixelArray(image_width, image_height)
 
     se = [
@@ -230,6 +222,79 @@ def computeDilation8Nbh3x3FlatSE(pixel_array, image_width, image_height):
     return image
 
 
+def erosion(pixel_array, image_width, image_height):
+
+    image = createInitializedGreyscalePixelArray(image_width, image_height)
+
+    se = [
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1]
+    ]
+
+    for i in range(1, image_height - 1):
+        for j in range(1, image_width - 1):
+
+            fit = True
+
+            for k in [-1, 0, 1]:
+                for l in [-1, 0, 1]:
+
+                    value = pixel_array[i + k][j + l]
+
+                    if value == 0 and value != se[k + 1][l + 1]:
+                        fit = False
+
+            if fit:
+                image[i][j] = 1
+
+    return image
+
+
+def connectedComponent(pixel_array, image_width, image_height):
+    image = createInitializedGreyscalePixelArray(image_width, image_height)
+    visited = createInitializedGreyscalePixelArray(image_width, image_height)
+
+    label = 1
+    info = {}
+
+    for i in range(image_height):
+        for j in range(image_width):
+
+            if pixel_array[i][j] != 0 and visited[i][j] != 1:
+
+                q = Queue()
+                q.enqueue((i, j))
+                visited[i][j] = 1
+                count = 0
+
+                while not q.isEmpty():
+
+                    (y, x) = q.dequeue()
+                    image[y][x] = label
+                    count += 1
+
+                    neighbours = [
+                        (y + 1, x),
+                        (y - 1, x),
+                        (y, x + 1),
+                        (y, x - 1)
+                    ]
+
+                    for px in neighbours:
+
+                        if -1 < px[0] < image_height and -1 < px[1] < image_width:
+
+                            if pixel_array[px[0]][px[1]] != 0 and visited[px[0]][px[1]] != 1:
+                                q.enqueue((px[0], px[1]))
+                                visited[px[0]][px[1]] = 1
+
+                info[label] = count
+                label += 1
+
+    return image, info
+
+
 # This is our code skeleton that performs the license plate detection.
 # Feel free to try it on your own images of cars, but keep in mind that with our algorithm developed in this lecture,
 # we won't detect arbitrary or difficult to detect license plates!
@@ -240,7 +305,7 @@ def main():
     SHOW_DEBUG_FIGURES = True
 
     # this is the default input image filename
-    input_filename = "numberplate1.png"
+    input_filename = "numberplate4.png"
 
     if command_line_arguments != []:
         input_filename = command_line_arguments[0]
@@ -261,53 +326,103 @@ def main():
     (image_width, image_height, px_array_r, px_array_g, px_array_b) = readRGBImageToSeparatePixelArrays(input_filename)
 
     # setup the plots for intermediate results in a figure
-    fig1, axs1 = pyplot.subplots(2, 2)
-    axs1[0, 0].set_title('Input red channel of image')
-    axs1[0, 0].imshow(px_array_r, cmap='gray')
-    axs1[0, 1].set_title('Input green channel of image')
-    axs1[0, 1].imshow(px_array_g, cmap='gray')
-    axs1[1, 0].set_title('Input blue channel of image')
-    axs1[1, 0].imshow(px_array_b, cmap='gray')
+    fig1, axs1 = pyplot.subplots(7, 1)
+    # axs1[0, 0].set_title('Input red channel of image')
+    # axs1[0, 0].imshow(px_array_r, cmap='gray')
+    # axs1[0, 1].set_title('Input green channel of image')
+    # axs1[0, 1].imshow(px_array_g, cmap='gray')
+    # axs1[1, 0].set_title('Input blue channel of image')
+    # axs1[1, 0].imshow(px_array_b, cmap='gray')
+
+    fig1.set_figwidth(5)
+    fig1.set_figheight(21)
 
 
     # STUDENT IMPLEMENTATION here
+
     # Convert RGB image to Greyscale
-    px_array = convertToGreyscale(image_width, image_height, px_array_r, px_array_g, px_array_b)
+    grey_array = convertToGreyscale(image_width, image_height, px_array_r, px_array_g, px_array_b)
+    axs1[0].set_title('Greyscale')
+    axs1[0].imshow(grey_array, cmap='gray')
 
-    # Scale and Quantize the image
-    px_array = scaleTo0And255AndQuantize(px_array, image_width, image_height)
+    # Standard Deviation and Scale
+    px_array = standardDeviation(grey_array, image_width, image_height)
+    px_array = scale(px_array, image_width, image_height)
+    axs1[1].set_title('Standard Deviation and Scale')
+    axs1[1].imshow(px_array, cmap='gray')
 
-    # Compute Standard Deviation
-    sd_array = computeStandardDeviationImage3x3(px_array, image_width, image_height)
-
-    # Compute Binary Threshold Segmentation
-    seg_array = computeThresholdSegmentation(px_array, image_width, image_height, 150)
+    # Threshold Segmentation
+    px_array = thresholdSegmentation(px_array, image_width, image_height, 140)
+    axs1[2].set_title('Threshold Segmentation')
+    axs1[2].imshow(px_array, cmap='g    ray')
 
     # Dilation operations
-    for i in range(3):
-        seg_array = computeDilation8Nbh3x3FlatSE(seg_array, image_width, image_height)
+    for i in range(5):
+        px_array = dilation(px_array, image_width, image_height)
+
+    axs1[3].set_title('Dilation Operations')
+    axs1[3].imshow(px_array, cmap='gray')
 
     # Erosion operations
-    for i in range(3):
-        seg_array = computeErosion8Nbh3x3FlatSE(seg_array, image_width, image_height)
+    for i in range(5):
+        px_array = erosion(px_array, image_width, image_height)
 
-    # compute a dummy bounding box centered in the middle of the input image, and with as size of half of width and height
-    center_x = image_width / 2.0
-    center_y = image_height / 2.0
-    bbox_min_x = center_x - image_width / 4.0
-    bbox_max_x = center_x + image_width / 4.0
-    bbox_min_y = center_y - image_height / 4.0
-    bbox_max_y = center_y + image_height / 4.0
+    axs1[4].set_title('Erosion Operations')
+    axs1[4].imshow(px_array, cmap='gray')
+
+    # Open operation
+    px_array = erosion(px_array, image_width, image_height)
+    px_array = dilation(px_array, image_width, image_height)
+
+    # Connected Component Analysis
+    px_array, cc_dict = connectedComponent(px_array, image_width, image_height)
+    axs1[5].set_title('Connected Component Detection')
+    axs1[5].imshow(px_array, cmap='gray')
+
+    # Sort to find largest connect component
+    cc_dict = sorted(cc_dict.items(), key=lambda item: item[1], reverse=True)
+
+    # Compute bounding box
+    aspect_ratio = 0
+    cc_index = -1
+
+    while not (1.5 < aspect_ratio < 5):
+        cc_index += 1
+        label = cc_dict[cc_index][0]
+        bbox_min_x = image_width - 1
+        bbox_max_x = 0
+        bbox_min_y = image_height - 1
+        bbox_max_y = 0
+
+        for i in range(image_height):
+            for j in range(image_width):
+
+                if px_array[i][j] == label:
+
+                    if j < bbox_min_x:
+                        bbox_min_x = j
+
+                    if j > bbox_max_x:
+                        bbox_max_x = j
+
+                    if i < bbox_min_y:
+                        bbox_min_y = i
+
+                    if i > bbox_max_y:
+                        bbox_max_y = i
+
+        aspect_ratio = (bbox_max_x - bbox_min_x) / (bbox_max_y - bbox_min_y)
+
 
     # Draw a bounding box as a rectangle into the input image
-    axs1[1, 1].set_title('Final image of detection')
-    axs1[1, 1].imshow(seg_array, cmap='gray')
+    axs1[6].set_title('Final image of detection')
+    axs1[6].imshow(grey_array, cmap='gray')
     rect = Rectangle((bbox_min_x, bbox_min_y), bbox_max_x - bbox_min_x, bbox_max_y - bbox_min_y, linewidth=1,
                      edgecolor='g', facecolor='none')
-    axs1[1, 1].add_patch(rect)
+    axs1[6].add_patch(rect)
 
     # write the output image into output_filename, using the matplotlib savefig method
-    extent = axs1[1, 1].get_window_extent().transformed(fig1.dpi_scale_trans.inverted())
+    extent = axs1[6].get_window_extent().transformed(fig1.dpi_scale_trans.inverted())
     pyplot.savefig(output_filename, bbox_inches=extent, dpi=600)
 
     if SHOW_DEBUG_FIGURES:
