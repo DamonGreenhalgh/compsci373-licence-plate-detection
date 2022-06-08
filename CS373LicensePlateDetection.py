@@ -401,7 +401,7 @@ def main():
     SHOW_DEBUG_FIGURES = True
 
     # this is the default input image filename
-    input_filename = "numberplate2.png"
+    input_filename = "numberplate1.png"
 
     if command_line_arguments != []:
         input_filename = command_line_arguments[0]
@@ -436,11 +436,11 @@ def main():
     axs1[0, 0].imshow(grey_array, cmap='gray')
 
     ''' Uncomment below to generate extension filter '''
-    # # EXTENSION - Vignette
-    # vignette_strength = 0.45
-    # px_array = computeVignette(px_array, image_width, image_height, vignette_strength)
-    # axs1[0, 1].set_title('EXTENSION Vignette (strength={})'.format(vignette_strength))
-    # axs1[0, 1].imshow(px_array, cmap='gray')
+    # EXTENSION - Vignette
+    vignette_strength = 0.45
+    px_array = computeVignette(px_array, image_width, image_height, vignette_strength)
+    axs1[0, 1].set_title('EXTENSION Vignette (strength={})'.format(vignette_strength))
+    axs1[0, 1].imshow(px_array, cmap='gray')
 
     # Standard Deviation and Scale
     px_array = computeStandardDeviation(px_array, image_width, image_height)
