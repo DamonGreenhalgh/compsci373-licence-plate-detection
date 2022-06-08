@@ -1,5 +1,5 @@
 '''
-COMPSCI 373 Assignment - License Plate Detection
+COMPSCI 373 Assignment - Licence Plate Detection
 Name: Damon Greenhalgh
 UPI: dgre615
 '''
@@ -12,6 +12,9 @@ from matplotlib.patches import Rectangle
 
 # import our basic, light-weight png reader library
 import imageIO.png
+
+# Extension import
+from CS373Extension import computeVignette
 
 
 # Queue data structure used for connected component analysis
@@ -346,7 +349,7 @@ def computeConnectedComponent(pixel_array, image_width, image_height):
 
 def computeBoundingBox(pixel_array, image_width, image_height, cc_dict):
     '''
-    This function computes the bounding box region for the license plate.
+    This function computes the bounding box region for the licence plate.
     '''
 
     aspect_ratio = 0
@@ -388,10 +391,9 @@ def computeBoundingBox(pixel_array, image_width, image_height, cc_dict):
     return min_x, max_x, min_y, max_y
 
 
-
-# This is our code skeleton that performs the license plate detection.
+# This is our code skeleton that performs the licence plate detection.
 # Feel free to try it on your own images of cars, but keep in mind that with our algorithm developed in this lecture,
-# we won't detect arbitrary or difficult to detect license plates!
+# we won't detect arbitrary or difficult to detect licence plates!
 def main():
 
     command_line_arguments = sys.argv[1:]
@@ -429,36 +431,44 @@ def main():
 
     # Convert RGB image to Greyscale
     grey_array = convertToGreyscale(image_width, image_height, px_array_r, px_array_g, px_array_b)
+    px_array = grey_array
     axs1[0, 0].set_title('Greyscale')
     axs1[0, 0].imshow(grey_array, cmap='gray')
 
+    ''' Uncomment below to generate extension filter '''
+    # # EXTENSION - Vignette
+    # vignette_strength = 0.45
+    # px_array = computeVignette(px_array, image_width, image_height, vignette_strength)
+    # axs1[0, 1].set_title('EXTENSION Vignette (strength={})'.format(vignette_strength))
+    # axs1[0, 1].imshow(px_array, cmap='gray')
+
     # Standard Deviation and Scale
-    px_array = computeStandardDeviation(grey_array, image_width, image_height)
-    axs1[0, 1].set_title('Standard Deviation')
-    axs1[0, 1].imshow(px_array, cmap='gray')
+    px_array = computeStandardDeviation(px_array, image_width, image_height)
+    axs1[1, 0].set_title('Standard Deviation')
+    axs1[1, 0].imshow(px_array, cmap='gray')
 
     # Scale Intensities
     px_array = computeScale(px_array, image_width, image_height)
-    axs1[1, 0].set_title('Scale')
-    axs1[1, 0].imshow(px_array, cmap='gray')
-
-    # Threshold Segmentation
-    px_array = computeThresholdSegmentation(px_array, image_width, image_height, 140)
-    axs1[1, 1].set_title('Threshold Segmentation')
+    axs1[1, 1].set_title('Scale')
     axs1[1, 1].imshow(px_array, cmap='gray')
 
-    # Dilation operations
-    for i in range(3):
-        px_array = computeDilation(px_array, image_width, image_height)
-
-    axs1[2, 0].set_title('Dilation Operations')
+    # Threshold Segmentation
+    threshold = 140
+    px_array = computeThresholdSegmentation(px_array, image_width, image_height, threshold)
+    axs1[2, 0].set_title('Threshold Segmentation (threshold={})'.format(threshold))
     axs1[2, 0].imshow(px_array, cmap='gray')
 
+    # Dilation operations
+    num_dilation = 3
+    num_erosion = 1
+    for i in range(num_dilation):
+        px_array = computeDilation(px_array, image_width, image_height)
+
     # Erosion operations
-    for i in range(1):
+    for i in range(num_erosion):
         px_array = computeErosion(px_array, image_width, image_height)
 
-    axs1[2, 1].set_title('Erosion Operations')
+    axs1[2, 1].set_title('Morphological Operations (dilation={0}, erosion={1})'.format(num_dilation, num_erosion))
     axs1[2, 1].imshow(px_array, cmap='gray')
 
     # Connected Component Analysis
@@ -476,7 +486,7 @@ def main():
     # Draw a bounding box as a rectangle into the input image
     axs1[3, 1].set_title('Final image of detection')
     axs1[3, 1].imshow(grey_array, cmap='gray')
-    rect = Rectangle((bbox_min_x, bbox_min_y), bbox_max_x - bbox_min_x, bbox_max_y - bbox_min_y, linewidth=1,
+    rect = Rectangle((bbox_min_x, bbox_min_y), bbox_max_x - bbox_min_x, bbox_max_y - bbox_min_y, linewidth=3,
                      edgecolor='g', facecolor='none')
     axs1[3, 1].add_patch(rect)
 
